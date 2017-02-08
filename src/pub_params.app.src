@@ -1,0 +1,23 @@
+{application, pub_params,
+ [{description, "Aliyun Public Request Args."},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {mod, { pub_params_app, []}},
+  {applications,
+   [kernel,
+    stdlib
+   ]},
+  {env,[
+    {params, #{
+      <<"Format">> => <<"XML">>,
+      <<"Version">> => <<"2015-01-09">>,
+      <<"SignatureMethod">> => <<"HMAC-SHA1">>,
+      <<"SignatureVersion">> => <<"1.0">>
+    }}
+  ]},
+  {modules, []},
+
+  {maintainers, ["qingchuwudi"]},
+  {licenses, ["Apache License Version 2.0"]},
+  {links, []}
+ ]}.

@@ -1,0 +1,1 @@
+{incl_app, pub_params, details}.
