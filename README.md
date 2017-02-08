@@ -2,6 +2,8 @@
 
 # pub-sign
 
+[![Build Status](https://travis-ci.org/aliyun-esdk/public-parameters.svg?branch=master)](https://travis-ci.org/aliyun-esdk/public-parameters)
+
 阿里云公共参数计算应用，用来计算阿里云公共参数。
 
 - [x] **SignatureNonce** 使用`uuid`
