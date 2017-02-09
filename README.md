@@ -50,35 +50,34 @@ PublicParams = pub_params:params(AccessKeyId, AccessKeySecret, ParamsExtra).
 $ make release && make console
 ```
 ```erlang
+Erlang/OTP 19 [erts-8.2] [source] [64-bit] [smp:4:4] [async-threads:30] [hipe] [kernel-poll:true]
 ... ...
-=PROGRESS REPORT==== 8-Feb-2017::13:43:00 ===
+=PROGRESS REPORT==== 9-Feb-2017::10:19:22 ===
          application: sasl
           started_at: pub_params@yWHtlN
 Eshell V8.2  (abort with ^G)
-(pub_params@yWHtlN)1> AccessKeyId = "testid".
-"testid"
-(pub_params@yWHtlN)2> AccessKeySecret = "testsecret".
-"testsecret"
-(pub_params@yWHtlN)3> pub_params:params(AccessKeyId, AccessKeySecret, []).
+(pub_params@yWHtlN)1> AccessKeyId = "testid", AccessKeySecret = "testsecret", Method = <<"GET">>.
+<<"GET">>
+(pub_params@yWHtlN)2> pub_params:params(AccessKeyId, AccessKeySecret, Method, []).
 #{<<"AccessKeyId">> => <<"testid">>,
   <<"Format">> => <<"XML">>,
-  <<"Signature">> => <<"tklk/lF55T7XC+fAJ0qQJCp3Z/4=">>,
+  <<"Signature">> => <<"ZETUs681hQPBDaGL0hx+hS7HwRg=">>,
   <<"SignatureMethod">> => <<"HMAC-SHA1">>,
-  <<"SignatureNonce">> => <<"c7af59e1-44c3-4446-97df-42527e6f7eb1">>,
+  <<"SignatureNonce">> => <<"e4ceb0c6-a874-4460-bb49-78f5149f71e9">>,
   <<"SignatureVersion">> => <<"1.0">>,
-  <<"Timestamp">> => <<"2017-02-08T17:00:06.212578Z">>,
+  <<"Timestamp">> => <<"2017-02-09T10:19:33.222659Z">>,
   <<"Version">> => <<"2015-01-09">>}
-(pub_params@yWHtlN)4> pub_params:params(AccessKeyId, AccessKeySecret, [], proplist).
+(pub_params@yWHtlN)3> pub_params:params(AccessKeyId, AccessKeySecret, Method, [], proplist).
 [{<<"AccessKeyId">>,<<"testid">>},
  {<<"Format">>,<<"XML">>},
- {<<"Signature">>,<<"BQSE/rt5fw5YNJoobAkGxBDYc/E=">>},
+ {<<"Signature">>,<<"SUrswYUbdDK4U+VJGzbXe2cHvsA=">>},
  {<<"SignatureMethod">>,<<"HMAC-SHA1">>},
  {<<"SignatureNonce">>,
-  <<"1f18c4d7-4236-42cf-b0b8-2631e2fc7e69">>},
+  <<"c72c7373-d719-40ec-9d00-d9f38c5b2dc5">>},
  {<<"SignatureVersion">>,<<"1.0">>},
- {<<"Timestamp">>,<<"2017-02-08T17:03:11.015449Z">>},
+ {<<"Timestamp">>,<<"2017-02-09T10:19:41.062027Z">>},
  {<<"Version">>,<<"2015-01-09">>}]
-(pub_params@yWHtlN)5>
+
 ```
 
 ####  在你的项目中使用
@@ -96,4 +95,4 @@ Eshell V8.2  (abort with ^G)
 
 
 ## 开源协议
-遵循开源协议 **Apache License, Version 2.0** ，细节请阅读 **LICENSE** 文件
+遵循开源协议 **Apache License Version 2.0** ，细节请阅读 **LICENSE** 文件
