@@ -74,7 +74,7 @@ params(AccessKeyId, AccessKeySecret, Method, ParamsExtra) ->
 params(AccessKeyId, AccessKeySecret, Method, ParamsExtra, Opt) ->
 	{ok, Vals} = application:get_env(?APP, params),
 	true = public_params_check(Vals),
-	Timestamp = etime:local2utc(),
+	Timestamp = etime:utc_to_iso8601(),
 	Nonce1 = uuid:get_v4(),
 	SignatureNonce = uuid:uuid_to_string(Nonce1),
 
