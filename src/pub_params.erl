@@ -24,22 +24,22 @@
 -author("qingchuwudi").
 
 -export ([
-	params/3, params/4,
-	params2/4, params2/5
+	params/4, params/5,
+	params2/5, params2/6
 ]).
 
--export ([list2url/1]).
+-export ([to_uri/1]).
 
 -include ("pub_params.hrl").
 
 -type options() :: proplist | map.
 -type params() :: proplists:proplist() | maps:map().
+-type method() :: list() | binary(). % "GET" | "POST" | <<"GET">> | <<"POST">>
 
 
 -define (APP, ?MODULE).
 -define (HH,  1000000000000000). % 10^15
 -define (DEFAULT_OPTION, map).
-
 
 % 名称				类型		是否必须	描述
 %%-----------------------------------------------------------------------------------
@@ -53,22 +53,25 @@
 % SignatureNonce	String	  是		唯一随机数，用于防止网络重放攻击。用户在不同请求间要使用不同的随机数值
 
 %%@doc 公共参数使用默认值，同时http请求带有其它参数，返回值格式默认
--spec params(AccessKeyId, AccessKeySecret, ParamsExtra) -> PublicParams when
+-spec params(AccessKeyId, AccessKeySecret, Method, ParamsExtra) -> PublicParams when
 		AccessKeyId :: string(),
 		AccessKeySecret :: string(),
+		Method :: method(),
 		ParamsExtra :: params(),
 		PublicParams :: params().
-params(AccessKeyId, AccessKeySecret, ParamsExtra) ->
-	params(AccessKeyId, AccessKeySecret, ParamsExtra, ?DEFAULT_OPTION).
+params(AccessKeyId, AccessKeySecret, Method, ParamsExtra) ->
+	true = method_check(Method),
+	params(AccessKeyId, AccessKeySecret, Method, ParamsExtra, ?DEFAULT_OPTION).
 
 %%@doc 公共参数使用默认值，同时http请求带有其它参数
--spec params(AccessKeyId, AccessKeySecret, ParamsExtra, Opt) -> PublicParams when
+-spec params(AccessKeyId, AccessKeySecret, Method, ParamsExtra, Opt) -> PublicParams when
 		AccessKeyId :: string(),
 		AccessKeySecret :: string(),
+		Method :: method(),
 		ParamsExtra :: params(),
 		Opt :: options(),
 		PublicParams :: params() .
-params(AccessKeyId, AccessKeySecret, ParamsExtra, Opt) ->
+params(AccessKeyId, AccessKeySecret, Method, ParamsExtra, Opt) ->
 	{ok, Vals} = application:get_env(?APP, params),
 	true = public_params_check(Vals),
 	Timestamp = etime:local2utc(),
@@ -80,33 +83,35 @@ params(AccessKeyId, AccessKeySecret, ParamsExtra, Opt) ->
 		?Timestamp => Timestamp,
 		?SignatureNonce => SignatureNonce
 	},
-	ParamsPub1 = maps:map(fun encode2/2, ParamsPub),
-	Signature = sign(AccessKeySecret, ParamsExtra, ParamsPub1),
+	ParamsPub1 = to_utf8_bin(ParamsPub),
+	Signature = sign(AccessKeySecret, Method, ParamsExtra, ParamsPub1),
 	ParamsPub2 = ParamsPub1#{ ?Signature => Signature },
 	params_return(ParamsPub2, Opt).
 
 
 %%@doc 所有参数自定义，返回值格式默认
-params2(AccessKeyId, AccessKeySecret, ParamsExtra, ParamsPub) ->
-	params2(AccessKeyId, AccessKeySecret, ParamsExtra, ParamsPub, ?DEFAULT_OPTION).
+params2(AccessKeyId, AccessKeySecret, Method, ParamsExtra, ParamsPub) ->
+	true = public_params_check(ParamsPub),
+	true = method_check(Method),
+	params2(AccessKeyId, AccessKeySecret, Method, ParamsExtra, ParamsPub, ?DEFAULT_OPTION).
 
 %%@doc 所有参数自定义
--spec params2(AccessKeyId, AccessKeySecret, ParamsExtra, ParamsPub, Opt) -> PublicParams when
+-spec params2(AccessKeyId, AccessKeySecret, Method, ParamsExtra, ParamsPub, Opt) -> PublicParams when
 		AccessKeyId :: list(), 
 		AccessKeySecret :: list(), 
+		Method :: method(),
 		ParamsExtra :: params(), 
 		ParamsPub :: params(),
 		Opt :: options(),
 		PublicParams :: params().
-params2(AccessKeyId, AccessKeySecret, ParamsExtra, ParamsPub, Opt) ->
-	true = public_params_check(ParamsPub),
+params2(AccessKeyId, AccessKeySecret, Method, ParamsExtra, ParamsPub, Opt) ->
 	ParamsPub1 = if
 		is_map(ParamsPub) ->
-			ParamsPub#{?AccessKeyId => AccessKeyId};
+			to_utf8_bin(ParamsPub#{?AccessKeyId => AccessKeyId});
 		is_list(ParamsPub) ->
-			(maps:from_list(ParamsPub))#{?AccessKeyId => AccessKeyId}
+			to_utf8_bin([{?AccessKeyId, AccessKeyId}| ParamsPub])
 	end,
-	Signature = sign(AccessKeySecret, ParamsExtra, ParamsPub1),
+	Signature = sign(AccessKeySecret, Method, ParamsExtra, ParamsPub1),
 	ParamsPub2 = ParamsPub1#{ ?Signature => Signature },
 	params_return(ParamsPub2, Opt).
 
@@ -142,51 +147,81 @@ public_params_check(#{?Format := _,
 public_params_check(_) ->
 	false.
 
+method_check("GET") -> true;
+method_check("POST") -> true;
+method_check(<<"GET">>) -> true;
+method_check(<<"POST">>) -> true;
+method_check(_) -> false.
+
 %%% 
 %%% Calc. SignatureNonce
 %%%
 
-sign(AccessKeySecret, ParamsExtra, Params) when is_map(ParamsExtra) ->
+sign(AccessKeySecret, Method, ParamsExtra, Params) when is_map(ParamsExtra) ->
 	StringToSign1 = maps:merge(ParamsExtra, Params),
-	StringToSign2 = maps_to_utf8(StringToSign1),
-	StringToSign3 = list2url(StringToSign2),
+	StringToSign2 = to_uri(StringToSign1),
+	StringToSign3 = binary_to_list(StringToSign2),
 	StringToSign4 = http_uri:encode(StringToSign3),
+	StringToSign5 = binary:list_to_bin([Method, <<"&">>, <<"%2F">>, <<"&">>, StringToSign4]),
 	Key = binary:list_to_bin([AccessKeySecret, <<"&">>]),
-	Signature1 = crypto:hmac(sha, Key, StringToSign4),
+	Signature1 = crypto:hmac(sha, Key, StringToSign5),
 	base64:encode(Signature1);
 
-sign(AccessKeySecret, ParamsExtra, Params) when is_list(ParamsExtra) ->
+sign(AccessKeySecret, Method, ParamsExtra, Params) when is_list(ParamsExtra) ->
 	ParamsExtra1 = maps:from_list(ParamsExtra),
-	sign(AccessKeySecret, ParamsExtra1, Params).
+	sign(AccessKeySecret, Method, ParamsExtra1, Params).
 
 %%% 
 %%% ParamsExtra : encode to utf8
 %%%
-maps_to_utf8(Map) when is_map(Map) ->
-    maps:from_list([encode1(K,V) ||{K,V}<-maps:to_list(Map)]).
+
+%%@doc map/list 格式的http参数表转换为 uri
+-spec to_uri(Params) -> URI when
+		Params :: params(),
+		URI :: string().
+to_uri(Params) when is_map(Params) ->
+	UriList = lists:sort([encode1(K,V) ||{K,V}<-maps:to_list(Params)]),
+	list2uri(UriList);
+to_uri(Params) when is_list(Params) ->
+	UriList = lists:sort([encode1(K,V) ||{K,V}<-Params]),
+	list2uri(UriList).
+
+
+-spec to_utf8_bin(Params) -> ParamsRes when
+		Params :: params(),
+		ParamsRes :: params().
+to_utf8_bin(Params) when is_map(Params) ->
+	maps:from_list([encode3(K,V) ||{K,V}<-maps:to_list(Params)]);
+to_utf8_bin(Params) when is_list(Params) ->
+	lists:sort([encode3(K,V) ||{K,V}<-Params]).
+
 encode1(K, V) ->
+	{http_uri:encode(binary_to_list(
+		unicode:characters_to_binary(K)
+		)), 
+	 http_uri:encode(binary_to_list(
+		unicode:characters_to_binary(V)
+	))}.
+
+encode3(K, V) ->
 	{unicode:characters_to_binary(K), 
 	 unicode:characters_to_binary(V)}.
-encode2(_, V) ->
-	unicode:characters_to_binary(V).
 
 %%%
-%%% proplist to url struct
+%%% proplist to uri struct
 %%%
 
-list2url([]) ->
+list2uri([]) ->
 	"";
-list2url(Map) when is_map(Map) ->
-	list2url(maps:to_list(Map));
-list2url(List) when is_list(List) ->
+list2uri(List) when is_list(List) ->
 	List2 = lists:reverse(List),
-	list2url(List2, []).
+	list2uri(List2, []);
+list2uri(Map) when is_map(Map) ->
+	list2uri(maps:to_list(Map)).
 
-list2url([{Key, Val} | []], Url) ->
-	list2url([], [Key, <<"=">> , Val | Url]);
-list2url([{Key, Val} | Rest], Url) ->
-	list2url(Rest, [<<"&">>, Key, <<"=">> , Val | Url]);
-list2url([], Url) ->
-	Url1 = binary:list_to_bin(Url),
-	Url2 = unicode:characters_to_binary(Url1, unicode, utf8),
-	binary_to_list(Url2).
+list2uri([{Key, Val} | []], Url) ->
+	list2uri([], [Key, <<"=">> , Val | Url]);
+list2uri([{Key, Val} | Rest], Url) ->
+	list2uri(Rest, [<<"&">>, Key, <<"=">> , Val | Url]);
+list2uri([], Url) ->
+	binary:list_to_bin(Url).

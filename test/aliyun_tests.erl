@@ -28,7 +28,7 @@
 -define (ALI_PARAMS_MAP, #{
     <<"AccessKeyId">> => <<"testid">>,
     <<"Format">> => <<"XML">>,
-    <<"Signature">> => <<"r8UdtNfb0tyl3efN6W/8OVpWiVE=">>,
+    <<"Signature">> => <<"uRpHwaSEt3J+6KQD//svCh/x+pI=">>,
     <<"SignatureMethod">> => <<"HMAC-SHA1">>,
     <<"SignatureNonce">> => <<"f59ed6a9-83fc-473b-9cc6-99c95df3856e">>,
     <<"SignatureVersion">> => <<"1.0">>,
@@ -38,7 +38,7 @@
 -define (ALI_PARAMS_LIST, [
     {<<"AccessKeyId">>,<<"testid">>},
     {<<"Format">>,<<"XML">>},
-    {<<"Signature">>,<<"r8UdtNfb0tyl3efN6W/8OVpWiVE=">>},
+    {<<"Signature">>,<<"uRpHwaSEt3J+6KQD//svCh/x+pI=">>},
     {<<"SignatureMethod">>,<<"HMAC-SHA1">>},
     {<<"SignatureNonce">>, <<"f59ed6a9-83fc-473b-9cc6-99c95df3856e">>},
     {<<"SignatureVersion">>,<<"1.0">>},
@@ -67,12 +67,14 @@ aliyun_test(_State) ->
 test1() ->
     AccessKeyId = "testid",
     AccessKeySecret = "testsecret",
+    Method = <<"GET">>,
     ParamsExtra = [{"Action", "DescribeDomainRecords"},{"DomainName", "example.com"}],
-    #{} = pub_params:params(AccessKeyId, AccessKeySecret, ParamsExtra).
+    #{} = pub_params:params(AccessKeyId, AccessKeySecret, Method, ParamsExtra).
 
 test2() ->
     AccessKeyId = <<"testid">>,
     AccessKeySecret = <<"testsecret">>,
+    Method = <<"GET">>,
     ParamsExtra = [{"Action", "DescribeDomainRecords"},{"DomainName", "example.com"}],
     ParamsPub = #{
         ?Format => <<"XML">>,
@@ -82,11 +84,12 @@ test2() ->
         ?Timestamp => <<"2016-03-24T16:41:54Z">>,
         ?SignatureNonce => <<"f59ed6a9-83fc-473b-9cc6-99c95df3856e">>
     },
-    pub_params:params2(AccessKeyId, AccessKeySecret, ParamsExtra, ParamsPub).
+    pub_params:params2(AccessKeyId, AccessKeySecret, Method, ParamsExtra, ParamsPub).
 
 test3() ->
     AccessKeyId = <<"testid">>,
     AccessKeySecret = <<"testsecret">>,
+    Method = <<"GET">>,
     ParamsExtra = [{"Action", "DescribeDomainRecords"},{"DomainName", "example.com"}],
     ParamsPub = #{
         ?Format => <<"XML">>,
@@ -96,4 +99,4 @@ test3() ->
         ?Timestamp => <<"2016-03-24T16:41:54Z">>,
         ?SignatureNonce => <<"f59ed6a9-83fc-473b-9cc6-99c95df3856e">>
     },
-    pub_params:params2(AccessKeyId, AccessKeySecret, ParamsExtra, ParamsPub, proplist).
+    pub_params:params2(AccessKeyId, AccessKeySecret, Method, ParamsExtra, ParamsPub, proplist).

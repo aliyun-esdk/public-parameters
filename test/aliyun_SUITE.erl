@@ -33,6 +33,7 @@ all() ->
 test(_) ->
 	AccessKeyId = "testid",
 	AccessKeySecret = "testsecret",
+    Method = <<"GET">>,
 	ParamsExtra = [{"Action", "DescribeDomainRecords"},{"DomainName", "example.com"}],
 	ParamsPub = #{
 	    ?Format => <<"XML">>,
@@ -42,5 +43,5 @@ test(_) ->
 	    ?Timestamp => <<"2016-03-24T16:41:54Z">>,
 	    ?SignatureNonce => <<"f59ed6a9-83fc-473b-9cc6-99c95df3856e">>
 	},
-  	PublicParamters = pub_params:params2(AccessKeyId, AccessKeySecret, ParamsExtra, ParamsPub),
+  	PublicParamters = pub_params:params2(AccessKeyId, AccessKeySecret, Method, ParamsExtra, ParamsPub),
   	ct:print("PublicParamters ~p~nend", [PublicParamters]).
